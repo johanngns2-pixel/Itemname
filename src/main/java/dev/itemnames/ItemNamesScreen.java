@@ -102,7 +102,8 @@ public class ItemNamesScreen extends Screen {
     }
 
     private void openPicker() {
-        if (selected == null || stops.isEmpty()) return;
+        if (selected == null) return;
+        if (stops.isEmpty()) { stops.add(0xFFFFFF); si = 0; apply(); syncStops(); }
         final int idx = si;
         minecraft.setScreen(new ColorPickerScreen(this, stops.get(idx), c -> {
             if (idx < stops.size()) { stops.set(idx, c); apply(); }
@@ -186,7 +187,7 @@ public class ItemNamesScreen extends Screen {
     }
 
     private void syncStops() {
-        colorBtn.active = !stops.isEmpty();
+        colorBtn.active = selected != null;
         for (int i = 0; i < stopBtns.size(); i++) stopBtns.get(i).visible = i < stops.size();
     }
 
