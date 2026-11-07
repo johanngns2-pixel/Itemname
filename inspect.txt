@@ -1,0 +1,128 @@
+== jars
+/home/runner/work/Itemname/Itemname/.gradle/loom-cache/minecraftMaven/net/minecraft/minecraft-merged-09642d39bd/1.21.11-loom.mappings.1_21_11.layered+hash.2198-v2/minecraft-merged-09642d39bd-1.21.11-loom.mappings.1_21_11.layered+hash.2198-v2-sources.jar
+== ItemStack
+804-
+805:	public Component getHoverName() {
+806-		Component component = this.getCustomName();
+807-		return component != null ? component : this.getItemName();
+808-	}
+809-
+810-	@Nullable
+811-	public Component getCustomName() {
+812-		Component component = this.get(DataComponents.CUSTOM_NAME);
+813-		if (component != null) {
+814-			return component;
+815-		} else {
+816-			WrittenBookContent writtenBookContent = this.get(DataComponents.WRITTEN_BOOK_CONTENT);
+817-			if (writtenBookContent != null) {
+818-				String string = writtenBookContent.title().raw();
+819-				if (!StringUtil.isBlank(string)) {
+--
+827-
+828:	public Component getItemName() {
+829-		return this.getItem().getName(this);
+830-	}
+831-
+832:	public Component getStyledHoverName() {
+833-		MutableComponent mutableComponent = Component.empty().append(this.getHoverName()).withStyle(this.getRarity().color());
+834-		if (this.has(DataComponents.CUSTOM_NAME)) {
+835-			mutableComponent.withStyle(ChatFormatting.ITALIC);
+836-		}
+837-
+838-		return mutableComponent;
+839-	}
+840-
+841-	public <T extends TooltipProvider> void addToTooltip(
+842-		DataComponentType<T> dataComponentType,
+843-		Item.TooltipContext tooltipContext,
+844-		TooltipDisplay tooltipDisplay,
+845-		Consumer<Component> consumer,
+846-		TooltipFlag tooltipFlag
+== callers
+net/minecraft/commands/arguments/item/ItemInput.java
+net/minecraft/client/gui/Gui.java
+net/minecraft/client/gui/components/ItemDisplayWidget.java
+net/minecraft/client/gui/screens/CreateFlatWorldScreen.java
+net/minecraft/client/gui/screens/inventory/tooltip/ClientBundleTooltip.java
+net/minecraft/client/gui/screens/inventory/AnvilScreen.java
+net/minecraft/client/gui/screens/achievement/StatsScreen.java
+net/minecraft/client/gui/screens/recipebook/RecipeButton.java
+net/minecraft/client/gui/screens/dialog/body/DialogBodyHandlers.java
+net/minecraft/client/renderer/entity/ItemFrameRenderer.java
+net/minecraft/world/entity/player/Inventory.java
+net/minecraft/world/entity/item/ItemEntity.java
+net/minecraft/world/inventory/AnvilMenu.java
+net/minecraft/world/level/block/entity/PotDecorations.java
+net/minecraft/world/item/component/ItemContainerContents.java
+net/minecraft/world/item/ItemStack.java
+net/minecraft/server/commands/EnchantCommand.java
+== tooltip
+854:	public List<Component> getTooltipLines(Item.TooltipContext tooltipContext, @Nullable Player player, TooltipFlag tooltipFlag) {
+855-		TooltipDisplay tooltipDisplay = this.getOrDefault(DataComponents.TOOLTIP_DISPLAY, TooltipDisplay.DEFAULT);
+856-		if (!tooltipFlag.isCreative() && tooltipDisplay.hideTooltip()) {
+857-			boolean bl = this.getItem().shouldPrintOpWarning(this, player);
+858-			return bl ? OP_NBT_WARNING : List.of();
+859-		} else {
+860-			List<Component> list = Lists.<Component>newArrayList();
+861-			list.add(this.getStyledHoverName());
+862-			this.addDetailsToTooltip(tooltipContext, tooltipDisplay, player, tooltipFlag, list::add);
+863-			return list;
+864-		}
+865-	}
+866-
+867-	public void addDetailsToTooltip(
+868-		Item.TooltipContext tooltipContext, TooltipDisplay tooltipDisplay, @Nullable Player player, TooltipFlag tooltipFlag, Consumer<Component> consumer
+869-	) {
+870-		this.getItem().appendHoverText(this, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+871-		this.addToTooltip(DataComponents.TROPICAL_FISH_PATTERN, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+872-		this.addToTooltip(DataComponents.INSTRUMENT, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+873-		this.addToTooltip(DataComponents.MAP_ID, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+874-		this.addToTooltip(DataComponents.BEES, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+875-		this.addToTooltip(DataComponents.CONTAINER_LOOT, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+876-		this.addToTooltip(DataComponents.CONTAINER, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+877-		this.addToTooltip(DataComponents.BANNER_PATTERNS, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+878-		this.addToTooltip(DataComponents.POT_DECORATIONS, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+879-		this.addToTooltip(DataComponents.WRITTEN_BOOK_CONTENT, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+880-		this.addToTooltip(DataComponents.CHARGED_PROJECTILES, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+881-		this.addToTooltip(DataComponents.FIREWORKS, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+882-		this.addToTooltip(DataComponents.FIREWORK_EXPLOSION, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+883-		this.addToTooltip(DataComponents.POTION_CONTENTS, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+884-		this.addToTooltip(DataComponents.JUKEBOX_PLAYABLE, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+885-		this.addToTooltip(DataComponents.TRIM, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+886-		this.addToTooltip(DataComponents.STORED_ENCHANTMENTS, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+887-		this.addToTooltip(DataComponents.ENCHANTMENTS, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+888-		this.addToTooltip(DataComponents.DYED_COLOR, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+889-		this.addToTooltip(DataComponents.PROFILE, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+890-		this.addToTooltip(DataComponents.LORE, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+891-		this.addAttributeTooltips(consumer, tooltipDisplay, player);
+892-		this.addUnitComponentToTooltip(DataComponents.INTANGIBLE_PROJECTILE, INTANGIBLE_TOOLTIP, tooltipDisplay, consumer);
+893-		this.addUnitComponentToTooltip(DataComponents.UNBREAKABLE, UNBREAKABLE_TOOLTIP, tooltipDisplay, consumer);
+894-		this.addToTooltip(DataComponents.OMINOUS_BOTTLE_AMPLIFIER, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+895-		this.addToTooltip(DataComponents.SUSPICIOUS_STEW_EFFECTS, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+896-		this.addToTooltip(DataComponents.BLOCK_STATE, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+897-		this.addToTooltip(DataComponents.ENTITY_DATA, tooltipContext, tooltipDisplay, consumer, tooltipFlag);
+898-		if ((this.is(Items.SPAWNER) || this.is(Items.TRIAL_SPAWNER)) && tooltipDisplay.shows(DataComponents.BLOCK_ENTITY_DATA)) {
+899-			TypedEntityData<BlockEntityType<?>> typedEntityData = this.get(DataComponents.BLOCK_ENTITY_DATA);
+== Gui
+612-	private void renderSelectedItemName(GuiGraphics guiGraphics) {
+613-		Profiler.get().push("selectedItemName");
+614-		if (this.toolHighlightTimer > 0 && !this.lastToolHighlight.isEmpty()) {
+615:			MutableComponent mutableComponent = Component.empty().append(this.lastToolHighlight.getHoverName()).withStyle(this.lastToolHighlight.getRarity().color());
+616-			if (this.lastToolHighlight.has(DataComponents.CUSTOM_NAME)) {
+617-				mutableComponent.withStyle(ChatFormatting.ITALIC);
+618-			}
+619-
+620-			int i = this.getFont().width(mutableComponent);
+621-			int j = (guiGraphics.guiWidth() - i) / 2;
+--
+1148-				this.toolHighlightTimer = 0;
+1149-			} else if (this.lastToolHighlight.isEmpty()
+1150-				|| !itemStack.is(this.lastToolHighlight.getItem())
+1151:				|| !itemStack.getHoverName().equals(this.lastToolHighlight.getHoverName())) {
+1152-				this.toolHighlightTimer = (int)(40.0 * this.minecraft.options.notificationDisplayTime().get());
+1153-			} else if (this.toolHighlightTimer > 0) {
+1154-				this.toolHighlightTimer--;
+1155-			}
+1156-
+1157-			this.lastToolHighlight = itemStack;
+== mace
