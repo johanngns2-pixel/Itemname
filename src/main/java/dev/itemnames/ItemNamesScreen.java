@@ -1,7 +1,6 @@
 package dev.itemnames;
 
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -11,88 +10,78 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
-import java.awt.Color;
 import java.util.*;
 
 public class ItemNamesScreen extends Screen {
     private static final int ROWS = 6, MAX_STOPS = 6;
+    /** Suchtexte (Name in der gewaehlten Minecraft-Sprache + ID), neu aufgebaut wenn die Sprache wechselt. */
     private static Map<Item, String> labels;
+    private static String labelsLang;
     private final Screen parent;
     private final List<Item> filtered = new ArrayList<>();
     private final List<Button> rows = new ArrayList<>();
     private final List<Button> stopBtns = new ArrayList<>();
     private final List<Integer> stops = new ArrayList<>();
     private EditBox search, name;
-    private Button boldBtn, italicBtn;
-    private Slider hue, sat, bri;
+    private Button boldBtn, italicBtn, colorBtn;
     private Item selected;
     private boolean bold, italic, loading;
+    private String query = "";
     private int page, si, rx, pw;
 
     public ItemNamesScreen(Screen parent) {
-        super(Component.literal("Item Names"));
+        super(Component.translatable("itemnames.title"));
         this.parent = parent;
     }
 
-    /** Regler fuer das Farbauswahl-Menue (Farbton / Saettigung / Helligkeit). */
-    private class Slider extends AbstractSliderButton {
-        private final String label;
-        private final int max;
-
-        Slider(int x, int y, int w, String label, int max) {
-            super(x, y, w, 18, Component.empty(), 0);
-            this.label = label;
-            this.max = max;
-            updateMessage();
-        }
-
-        void set(int v) { value = v / (double) max; updateMessage(); }
-        int get() { return (int) Math.round(value * max); }
-
-        @Override protected void updateMessage() { setMessage(Component.literal(label + ": " + get())); }
-        @Override protected void applyValue() { pick(); }
-    }
+    private static Component tr(String key) { return Component.translatable(key); }
 
     @Override
     protected void init() {
-        if (labels == null) {
+        String lang = minecraft.getLanguageManager().getSelected();
+        if (labels == null || !lang.equals(labelsLang)) {
             labels = new LinkedHashMap<>();
             for (Item i : BuiltInRegistries.ITEM) {
                 ItemStack s = i.getDefaultInstance();
                 labels.put(i, (i.getName(s).getString() + " " + ItemNames.key(i)).toLowerCase());
             }
+            labelsLang = lang;
         }
         rx = 190;
         pw = Math.min(210, width - rx - 10);
+        int keepSi = si;
 
-        search = new EditBox(font, 20, 28, 150, 16, Component.literal("Suche"));
-        search.setHint(Component.literal("Item suchen..."));
-        search.setResponder(s -> { page = 0; refilter(s); rebuildRows(); });
+        search = new EditBox(font, 20, 28, 150, 16, tr("itemnames.search"));
+        search.setHint(tr("itemnames.search.hint"));
+        search.setValue(query);
+        search.setResponder(s -> { query = s; page = 0; refilter(s); rebuildRows(); });
         addRenderableWidget(search);
 
-        name = new EditBox(font, rx, 44, pw, 18, Component.literal("Name"));
+        name = new EditBox(font, rx, 44, pw, 18, tr("itemnames.name"));
         name.setMaxLength(64);
-        name.setHint(Component.literal("Neuer Name"));
+        name.setHint(tr("itemnames.name.hint"));
         name.setResponder(s -> apply());
         addRenderableWidget(name);
 
         stopBtns.clear();
         for (int i = 0; i < MAX_STOPS; i++) {
             final int idx = i;
-            stopBtns.add(addRenderableWidget(Button.builder(Component.empty(), b -> { si = idx; syncSliders(); })
+            stopBtns.add(addRenderableWidget(Button.builder(Component.empty(), b -> {
+                        if (si == idx && idx < stops.size()) openPicker();
+                        else { si = idx; syncStops(); }
+                    })
                     .bounds(rx + i * 26, 92, 22, 20).build()));
         }
-        hue = addRenderableWidget(new Slider(rx, 116, pw, "Farbton", 360));
-        sat = addRenderableWidget(new Slider(rx, 135, pw, "Saettigung", 100));
-        bri = addRenderableWidget(new Slider(rx, 154, pw, "Helligkeit", 100));
+        colorBtn = addRenderableWidget(Button.builder(tr("itemnames.pick"), b -> openPicker())
+                .bounds(rx, 118, pw, 20).build());
 
-        boldBtn = addRenderableWidget(Button.builder(Component.literal("Fett"), b -> { bold = !bold; apply(); updateBtns(); })
+        boldBtn = addRenderableWidget(Button.builder(tr("itemnames.bold"), b -> { bold = !bold; apply(); updateBtns(); })
                 .bounds(rx, 176, 46, 20).build());
-        italicBtn = addRenderableWidget(Button.builder(Component.literal("Kursiv"), b -> { italic = !italic; apply(); updateBtns(); })
+        italicBtn = addRenderableWidget(Button.builder(tr("itemnames.italic"), b -> { italic = !italic; apply(); updateBtns(); })
                 .bounds(rx + 50, 176, 50, 20).build());
         addRenderableWidget(Button.builder(Component.literal("+"), b -> addStop()).bounds(rx + 104, 176, 24, 20).build());
         addRenderableWidget(Button.builder(Component.literal("-"), b -> removeStop()).bounds(rx + 132, 176, 24, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("Reset"), b -> reset()).bounds(rx + 160, 176, 50, 20).build());
+        addRenderableWidget(Button.builder(tr("itemnames.reset"), b -> reset()).bounds(rx + 160, 176, 50, 20).build());
 
         addRenderableWidget(Button.builder(Component.literal("<"), b -> { if (page > 0) { page--; rebuildRows(); } })
                 .bounds(20, 54 + ROWS * 22, 70, 20).build());
@@ -100,10 +89,24 @@ public class ItemNamesScreen extends Screen {
                 .bounds(100, 54 + ROWS * 22, 70, 20).build());
         addRenderableWidget(Button.builder(CommonComponents.GUI_DONE, b -> onClose())
                 .bounds(width / 2 - 50, height - 26, 100, 20).build());
-        refilter("");
+
+        refilter(query);
+        page = Math.max(0, Math.min(page, Math.max(0, (filtered.size() - 1) / ROWS)));
         rebuildRows();
+        if (selected != null) {
+            select(selected);
+            si = Math.max(0, Math.min(keepSi, stops.size() - 1));
+        }
         updateBtns();
-        syncSliders();
+        syncStops();
+    }
+
+    private void openPicker() {
+        if (selected == null || stops.isEmpty()) return;
+        final int idx = si;
+        minecraft.setScreen(new ColorPickerScreen(this, stops.get(idx), c -> {
+            if (idx < stops.size()) { stops.set(idx, c); apply(); }
+        }));
     }
 
     private void refilter(String q) {
@@ -142,7 +145,7 @@ public class ItemNamesScreen extends Screen {
         italic = e != null && e.italic;
         loading = false;
         updateBtns();
-        syncSliders();
+        syncStops();
     }
 
     private String spec() {
@@ -166,17 +169,11 @@ public class ItemNamesScreen extends Screen {
         ItemNames.entries.put(k, e);
     }
 
-    private void pick() {
-        if (loading || selected == null || stops.isEmpty()) return;
-        stops.set(si, Color.HSBtoRGB(hue.get() / 360f, sat.get() / 100f, bri.get() / 100f) & 0xFFFFFF);
-        apply();
-    }
-
     private void addStop() {
         if (selected == null || stops.size() >= MAX_STOPS) return;
         stops.add(stops.isEmpty() ? 0xFF5EC8 : stops.get(stops.size() - 1));
         si = stops.size() - 1;
-        syncSliders();
+        syncStops();
         apply();
     }
 
@@ -184,23 +181,13 @@ public class ItemNamesScreen extends Screen {
         if (selected == null || stops.isEmpty()) return;
         stops.remove(si);
         si = Math.max(0, Math.min(si, stops.size() - 1));
-        syncSliders();
+        syncStops();
         apply();
     }
 
-    private void syncSliders() {
-        loading = true;
-        boolean has = !stops.isEmpty();
-        hue.active = sat.active = bri.active = has;
-        if (has) {
-            int c = stops.get(si);
-            float[] hsb = Color.RGBtoHSB((c >> 16) & 255, (c >> 8) & 255, c & 255, null);
-            hue.set(Math.round(hsb[0] * 360));
-            sat.set(Math.round(hsb[1] * 100));
-            bri.set(Math.round(hsb[2] * 100));
-        }
+    private void syncStops() {
+        colorBtn.active = !stops.isEmpty();
         for (int i = 0; i < stopBtns.size(); i++) stopBtns.get(i).visible = i < stops.size();
-        loading = false;
     }
 
     private void reset() {
@@ -210,8 +197,8 @@ public class ItemNamesScreen extends Screen {
     }
 
     private void updateBtns() {
-        boldBtn.setMessage(Component.literal(bold ? "Fett*" : "Fett"));
-        italicBtn.setMessage(Component.literal(italic ? "Kursiv*" : "Kursiv"));
+        boldBtn.setMessage(bold ? Component.literal(tr("itemnames.bold").getString() + "*") : tr("itemnames.bold"));
+        italicBtn.setMessage(italic ? Component.literal(tr("itemnames.italic").getString() + "*") : tr("itemnames.italic"));
     }
 
     /** Vanilla-Optik: dunkle Panels mit hellem/dunklem Rand wie in den Minecraft-Menues. */
@@ -236,11 +223,11 @@ public class ItemNamesScreen extends Screen {
         g.drawString(font, title, 20, 12, 0xFFFFFFFF);
         for (int i = 0; i < rows.size(); i++)
             g.renderItem(filtered.get(page * ROWS + i).getDefaultInstance(), 20, 54 + i * 22 + 2);
-        g.drawString(font, Component.literal("Name"), rx, 32, 0xFFAAAAAA);
-        g.drawString(font, Component.literal("Farbverlauf (Farbe waehlen, + fuegt eine hinzu)"), rx, 68, 0xFFAAAAAA);
+        g.drawString(font, tr("itemnames.name"), rx, 32, 0xFFAAAAAA);
+        g.drawString(font, tr("itemnames.gradient"), rx, 68, 0xFFAAAAAA);
         if (stops.isEmpty()) {
             g.fill(rx, 80, rx + pw, 88, 0xFF555555);
-            g.drawString(font, Component.literal("Keine Farbe - mit + hinzufuegen"), rx, 98, 0xFF888888);
+            g.drawString(font, tr("itemnames.gradient.none"), rx, 98, 0xFF888888);
         } else {
             for (int px = 0; px < pw; px++)
                 g.fill(rx + px, 80, rx + px + 1, 88, 0xFF000000 | ItemNames.colorAt(spec(), px / (float) Math.max(1, pw - 1)));
@@ -254,8 +241,13 @@ public class ItemNamesScreen extends Screen {
             String text = name.getValue().isBlank() ? selected.getName(selected.getDefaultInstance()).getString() : name.getValue();
             g.renderItem(selected.getDefaultInstance(), rx, 8);
             g.drawString(font, ItemNames.build(text, spec(), bold, italic), rx + 22, 13, 0xFFFFFFFF);
+            // Vorschau im Tooltip-Stil
+            g.drawString(font, tr("itemnames.preview"), rx, 144, 0xFFAAAAAA);
+            g.fill(rx, 154, rx + pw, 172, 0xF0100010);
+            g.renderOutline(rx, 154, pw, 18, 0xFF3A0E6B);
+            g.drawString(font, ItemNames.build(text, spec(), bold, italic), rx + 6, 159, 0xFFFFFFFF);
         } else {
-            g.drawString(font, Component.literal("Links ein Item auswaehlen"), rx, 13, 0xFF888888);
+            g.drawString(font, tr("itemnames.select"), rx, 13, 0xFF888888);
         }
     }
 

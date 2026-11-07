@@ -1,1 +1,20 @@
-{"key.itemnames.open":"Item-Namen-Menü öffnen"}
+{
+  "key.itemnames.open": "Item-Namen-Menü öffnen",
+  "itemnames.title": "Item-Namen",
+  "itemnames.search": "Suche",
+  "itemnames.search.hint": "Item suchen...",
+  "itemnames.name": "Name",
+  "itemnames.name.hint": "Neuer Name",
+  "itemnames.gradient": "Farbverlauf (Farbe anklicken, + fügt eine hinzu)",
+  "itemnames.gradient.none": "Keine Farbe – mit + hinzufügen",
+  "itemnames.pick": "Farbe wählen...",
+  "itemnames.bold": "Fett",
+  "itemnames.italic": "Kursiv",
+  "itemnames.reset": "Zurücksetzen",
+  "itemnames.preview": "Vorschau",
+  "itemnames.select": "Links ein Item auswählen",
+  "itemnames.picker.title": "Farbe wählen",
+  "itemnames.picker.new": "Neu",
+  "itemnames.picker.old": "Alt",
+  "itemnames.picker.hex": "Hex"
+}
