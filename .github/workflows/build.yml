@@ -22,3 +22,10 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with: { files: build/libs/*.jar }
+      - name: JAR auf Branch release-jar ablegen
+        if: github.ref == 'refs/heads/main'
+        run: |
+          mkdir /tmp/out && cp build/libs/itemnames-*.jar /tmp/out/ && rm -f /tmp/out/*-sources.jar /tmp/out/*-dev.jar
+          git config user.name ci; git config user.email ci@example.com
+          git checkout --orphan release-jar && git rm -rf -q . && cp /tmp/out/*.jar . && git add -f *.jar
+          git commit -q -m "JAR" && git push -f origin release-jar

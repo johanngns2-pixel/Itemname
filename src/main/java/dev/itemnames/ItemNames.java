@@ -57,8 +57,8 @@ public class ItemNames {
         int n = cps.length;
         for (int k = 0; k < n; k++) {
             float t = n <= 1 ? 0f : (float) k / (n - 1);
-            int rgb = sample(cols, t);
-            Style st = Style.EMPTY.withColor(rgb).withBold(bold).withItalic(italic);
+            Style st = Style.EMPTY.withBold(bold).withItalic(italic);
+            if (!cols.isEmpty()) st = st.withColor(sample(cols, t)); // ohne Farbe bleibt die Seltenheitsfarbe des Items
             out.append(Component.literal(new String(Character.toChars(cps[k]))).withStyle(st));
         }
         return out;
@@ -74,7 +74,6 @@ public class ItemNames {
                 l.add(new int[]{(v >> 16) & 255, (v >> 8) & 255, v & 255});
             } catch (NumberFormatException ignored) {}
         }
-        if (l.isEmpty()) l.add(new int[]{255, 255, 255});
         return l;
     }
 
@@ -88,7 +87,10 @@ public class ItemNames {
         return pack(new int[]{Math.round(x[0] + (y[0] - x[0]) * f), Math.round(x[1] + (y[1] - x[1]) * f), Math.round(x[2] + (y[2] - x[2]) * f)});
     }
 
-    public static int colorAt(String spec, float t) { return sample(parse(spec), t); }
+    public static int colorAt(String spec, float t) {
+        List<int[]> c = parse(spec);
+        return c.isEmpty() ? 0xFFFFFF : sample(c, t);
+    }
 
     private static int pack(int[] c) { return (c[0] << 16) | (c[1] << 8) | c[2]; }
 }
