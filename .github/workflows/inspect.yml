@@ -1,0 +1,29 @@
+name: inspect
+on:
+  push:
+    branches: [inspect]
+permissions:
+  contents: write
+jobs:
+  i:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21 }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: current }
+      - run: gradle genSources --no-daemon
+      - run: |
+          J=$(find / -name "*-sources.jar" -path "*inecraft*" 2>/dev/null | grep -v fabric-api | head -3)
+          echo "$J" > /tmp/jars.txt
+          mkdir -p /tmp/src && for j in $J; do unzip -q -o "$j" -d /tmp/src || true; done
+          F=$(find /tmp/src -name ItemStack.java | head -1)
+          {
+            echo "== jars"; cat /tmp/jars.txt
+            echo "== ItemStack"; grep -n -B1 -A14 "Component getHoverName\|Component getStyledHoverName\|Component getItemName" "$F"
+            echo "== callers"; grep -rln "getHoverName()\|getStyledHoverName()\|getItemName()" /tmp/src --include=*.java | sed 's#/tmp/src/##' | head -80
+            echo "== mace"; grep -n -A12 "MACE" $(find /tmp/src -name Items.java | head -1) | head -30
+          } > inspect.txt
+          git config user.name ci; git config user.email ci@example.com
+          git checkout -b inspect-out; git add -f inspect.txt; git commit -m out; git push -f origin inspect-out
