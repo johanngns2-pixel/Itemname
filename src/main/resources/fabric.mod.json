@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "itemnames",
+  "version": "${version}",
+  "name": "Item Names",
+  "description": "Eigene Namen, Farben und Farbverläufe für jedes Item. Menü über Mod Menu oder Keybind.",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["dev.itemnames.ItemNamesClient"],
+    "modmenu": ["dev.itemnames.ModMenuIntegration"]
+  },
+  "mixins": ["itemnames.mixins.json"],
+  "depends": { "minecraft": "~1.21.11", "fabricloader": ">=0.18.0", "fabric-api": "*", "java": ">=21" }
+}
